@@ -35,11 +35,31 @@ class APIBaseTests: XCTestCase {
         super.tearDown()
     }
 
-    func testBuildURLRequest() {
+    func testBuildURLRequestMethod() {
         let urlRequest = TestRequest().buildURLRequest()
-        expect(urlRequest).toNot(beNil())
         expect(urlRequest?.httpMethod) == "GET"
-        expect(urlRequest?.url?.absoluteString) == "/"
+    }
+
+    func testBuildURLRequestURL() {
+        let request = TestRequest()
+        request.baseURL = URL(string: "http://test")
+        let urlRequest = request.buildURLRequest()
+        expect(urlRequest?.url?.absoluteString) == "http://test/"
+    }
+
+    func testBuildURLRequestQueryString() {
+        let request = TestRequest()
+        request.queryItems = [URLQueryItem(name: "foo", value: "bar")]
+        var urlRequest = request.buildURLRequest()
+        expect(urlRequest?.url?.absoluteString) == "/?foo=bar"
+
+        request.queryItems = [URLQueryItem(name: "foo", value: "bar baz")]
+        urlRequest = request.buildURLRequest()
+        expect(urlRequest?.url?.absoluteString) == "/?foo=bar%20baz"
+
+        request.queryItems = [URLQueryItem(name: "foo", value: "bar+baz")]
+        urlRequest = request.buildURLRequest()
+        expect(urlRequest?.url?.absoluteString) == "/?foo=bar%2Bbaz"
     }
 
     func testStart() {

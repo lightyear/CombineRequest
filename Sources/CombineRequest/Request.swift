@@ -21,10 +21,12 @@ public protocol Request {
 
     var method: HTTPMethod { get }
     var path: String { get }
+    var queryItems: [URLQueryItem] { get }
     
     func start() -> AnyPublisher<ModelType, Failure>
 }
 
 extension Request {
     var method: HTTPMethod { .get }
+    var queryItems: [URLQueryItem] { [] }
 }

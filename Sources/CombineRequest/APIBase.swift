@@ -22,15 +22,31 @@ open class APIBase {
     open var baseURL: URL? = nil
     open var method = HTTPMethod.get
     open var path = ""
+    open var queryItems = [URLQueryItem]()
 
     public init() {
     }
 
     open func buildURLRequest() -> URLRequest? {
-        guard let url = URL(string: path, relativeTo: baseURL) else { return nil }
+        guard let url = buildURL() else { return nil }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method.rawValue
         return urlRequest
+    }
+
+    func buildURL() -> URL? {
+        var components = URLComponents()
+        components.path = path
+
+        if !queryItems.isEmpty {
+            var querySafe = CharacterSet.urlQueryAllowed
+            querySafe.remove("+")
+            components.percentEncodedQuery = queryItems.map {
+                "\($0.name.addingPercentEncoding(withAllowedCharacters: querySafe)!)=\($0.value?.addingPercentEncoding(withAllowedCharacters: querySafe) ?? "")"
+            }.joined(separator: "&")
+        }
+
+        return components.url(relativeTo: baseURL)
     }
 
     open func sendRequest() -> AnyPublisher<DataResponseTuple, Error> {
