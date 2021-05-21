@@ -19,6 +19,7 @@ open class APIBase {
     public typealias DataResponseTuple = (data: Data, response: HTTPURLResponse)
 
     public var session = URLSession(configuration: .ephemeral)
+    public lazy var request = buildURLRequest()
     open var baseURL: URL?
     open var method = HTTPMethod.get
     open var path = ""
@@ -64,7 +65,7 @@ open class APIBase {
     }
 
     open func sendRequest() -> AnyPublisher<DataResponseTuple, Error> {
-        if let request = buildURLRequest() {
+        if let request = request {
             return session.dataTaskPublisher(for: request)
                 .mapError { $0 }
                 .isHTTPResponse()
