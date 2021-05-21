@@ -11,6 +11,7 @@ import Combine
 public enum RequestError: Error {
     case invalidURL
     case nonHTTPResponse
+    case httpFailure(Int)
 }
 
 open class APIBase {
@@ -49,6 +50,15 @@ extension Publisher {
                 return (data: $0.data, response: httpResponse)
             }
             throw RequestError.nonHTTPResponse
+        }
+    }
+
+    public func validateStatusCode<Codes: Sequence>(in statusCodes: Codes) -> Publishers.TryScan<Self, Output> where Codes.Element == Int, Output == (data: Data, response: HTTPURLResponse) {
+        self.tryScan((data: Data(), response: HTTPURLResponse())) { _, tuple in
+            if !statusCodes.contains(tuple.response.statusCode) {
+                throw RequestError.httpFailure(tuple.response.statusCode)
+            }
+            return tuple
         }
     }
 }
