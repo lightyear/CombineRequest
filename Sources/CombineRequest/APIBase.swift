@@ -28,6 +28,10 @@ open class APIBase {
     open var body: Data?
     open var bodyStream: (stream: InputStream, count: Int)?
 
+    private var subscriptions = Set<AnyCancellable>()
+    @Published public var downloadProgress = (received: Int64(0), expected: Int64(0))
+    @Published public var uploadProgress = (sent: Int64(0), expected: Int64(0))
+
     public init() {
     }
 
@@ -66,10 +70,33 @@ open class APIBase {
 
     open func sendRequest() -> AnyPublisher<DataResponseTuple, Error> {
         if let request = request {
-            return session.dataTaskPublisher(for: request)
-                .mapError { $0 }
-                .isHTTPResponse()
-                .eraseToAnyPublisher()
+            return Future { promise in
+                let task = self.session.dataTask(with: request) { data, urlResponse, error in
+                    if let error = error {
+                        promise(.failure(error))
+                    } else if let data = data, let httpURLResponse = urlResponse as? HTTPURLResponse {
+                        promise(.success((data: data, response: httpURLResponse)))
+                    } else {
+                        promise(.failure(RequestError.nonHTTPResponse))
+                    }
+                }
+
+                Publishers.CombineLatest(
+                    task.publisher(for: \.countOfBytesSent),
+                    task.publisher(for: \.countOfBytesExpectedToSend)
+                )
+                .sink { self.uploadProgress = (sent: $0.0, expected: $0.1) }
+                .store(in: &self.subscriptions)
+                Publishers.CombineLatest(
+                    task.publisher(for: \.countOfBytesReceived),
+                    task.publisher(for: \.countOfBytesExpectedToReceive)
+                )
+                .sink { self.downloadProgress = (received: $0.0, expected: $0.1) }
+                .store(in: &self.subscriptions)
+
+                task.resume()
+            }
+            .eraseToAnyPublisher()
         } else {
             return Fail(error: RequestError.invalidURL)
                 .eraseToAnyPublisher()

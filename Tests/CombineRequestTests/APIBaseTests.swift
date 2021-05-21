@@ -19,7 +19,25 @@ private class TestRequest: APIBase, Request {
     }
 
     func start() -> AnyPublisher<Void, Error> {
-        super.sendRequest()
+        sendRequest()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+}
+
+private class TestUploadRequest: APIBase, Request {
+    override init() {
+        super.init()
+        method = .post
+        baseURL = URL(string: "https://postman-echo.com")
+        path = "/post"
+        contentType = "application/octet-stream"
+        body = Data(count: 1000)
+    }
+
+    func start() -> AnyPublisher<Void, Error> {
+        sendRequest()
+            .print()
             .map { _ in () }
             .eraseToAnyPublisher()
     }
@@ -129,5 +147,25 @@ class APIBaseTests: XCTestCase {
 
         expect(cancellable).toNot(beNil())
         wait(for: [expectation], timeout: 1)
+    }
+
+    func testProgress() {
+        let expectation = expectation(description: "upload/download progress")
+
+        let request = TestUploadRequest()
+        let cancellable = request
+            .start()
+            .sink {
+                switch $0 {
+                case .finished: expectation.fulfill()
+                case .failure:  fail("should not fail")
+                }
+            } receiveValue: {
+            }
+
+        expect(cancellable).toNot(beNil())
+        wait(for: [expectation], timeout: 2)
+        expect(request.uploadProgress.sent) > 0
+        expect(request.downloadProgress.received) > 0
     }
 }
