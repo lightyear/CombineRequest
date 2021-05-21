@@ -26,6 +26,20 @@ private class TestStatusRequest: APIBase, Request {
     }
 }
 
+private class TestContentTypeRequest: APIBase, Request {
+    override init() {
+        super.init()
+        path = "/"
+    }
+
+    func start() -> AnyPublisher<Void, Error> {
+        super.sendRequest()
+            .hasContentType("text/plain")
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+}
+
 class OperatorTests: XCTestCase {
     override func setUp() {
         super.setUp()
@@ -69,6 +83,69 @@ class OperatorTests: XCTestCase {
                 case .finished: fail("should not succeed")
                 case .failure(RequestError.httpFailure(let status)):
                     expect(status) == 400
+                    expectation.fulfill()
+                case .failure(let error):
+                    fail("wrong error type: \(error)")
+                }
+            } receiveValue: {
+            }
+
+        expect(cancellable).toNot(beNil())
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testCorrectContentType() {
+        let expectation = expectation(description: "GET / is text/plain")
+        stub(condition: isAbsoluteURLString("/")) { _ in
+            HTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Content-Type": "text/plain"])
+        }
+
+        let cancellable = TestContentTypeRequest()
+            .start()
+            .sink {
+                switch $0 {
+                case .finished:           expectation.fulfill()
+                case .failure(let error): fail("should not fail: \(error)")
+                }
+            } receiveValue: {
+            }
+
+        expect(cancellable).toNot(beNil())
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testCorrectContentTypeWithCharset() {
+        let expectation = expectation(description: "GET / is text/plain")
+        stub(condition: isAbsoluteURLString("/")) { _ in
+            HTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Content-Type": "text/plain; charset=utf-8"])
+        }
+
+        let cancellable = TestContentTypeRequest()
+            .start()
+            .sink {
+                switch $0 {
+                case .finished:           expectation.fulfill()
+                case .failure(let error): fail("should not fail: \(error)")
+                }
+            } receiveValue: {
+            }
+
+        expect(cancellable).toNot(beNil())
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testWrongContentType() {
+        let expectation = expectation(description: "GET / is text/plain")
+        stub(condition: isAbsoluteURLString("/")) { _ in
+            HTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Content-Type": "text/html"])
+        }
+
+        let cancellable = TestContentTypeRequest()
+            .start()
+            .sink {
+                switch $0 {
+                case .finished: fail("should not succeed")
+                case .failure(RequestError.contentTypeMismatch):
                     expectation.fulfill()
                 case .failure(let error):
                     fail("wrong error type: \(error)")

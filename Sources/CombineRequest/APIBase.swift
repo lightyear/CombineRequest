@@ -12,6 +12,7 @@ public enum RequestError: Error {
     case invalidURL
     case nonHTTPResponse
     case httpFailure(Int)
+    case contentTypeMismatch
 }
 
 open class APIBase {
@@ -59,6 +60,17 @@ extension Publisher {
                 throw RequestError.httpFailure(tuple.response.statusCode)
             }
             return tuple
+        }
+    }
+
+    public func hasContentType(_ expectedType: String) -> Publishers.TryScan<Self, Output> where Output == (data: Data, response: HTTPURLResponse) {
+        self.tryScan((data: Data(), response: HTTPURLResponse())) { _, tuple in
+            if let contentType = tuple.response.value(forHTTPHeaderField: "Content-Type") {
+                if contentType == expectedType || contentType.hasPrefix("\(expectedType); charset=") {
+                    return tuple
+                }
+            }
+            throw RequestError.contentTypeMismatch
         }
     }
 }
