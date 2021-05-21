@@ -24,6 +24,7 @@ public protocol Request {
     var queryItems: [URLQueryItem] { get }
     var contentType: String? { get }
     var body: Data? { get }
+    var bodyStream: (stream: InputStream, count: Int)? { get }
     
     func start() -> AnyPublisher<ModelType, Failure>
 }
@@ -33,4 +34,5 @@ extension Request {
     var queryItems: [URLQueryItem] { [] }
     var contentType: String? { nil }
     var body: Data? { nil }
+    var bodyStream: (stream: InputStream, count: Int)? { nil }
 }

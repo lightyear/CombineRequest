@@ -25,6 +25,7 @@ open class APIBase {
     open var queryItems = [URLQueryItem]()
     open var contentType: String?
     open var body: Data?
+    open var bodyStream: (stream: InputStream, count: Int)?
 
     public init() {
     }
@@ -38,6 +39,10 @@ open class APIBase {
             urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
             urlRequest.setValue("\(body.count)", forHTTPHeaderField: "Content-Length")
             urlRequest.httpBody = body
+        } else if let body = bodyStream {
+            urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
+            urlRequest.setValue("\(body.count)", forHTTPHeaderField: "Content-Length")
+            urlRequest.httpBodyStream = body.stream
         }
 
         return urlRequest
