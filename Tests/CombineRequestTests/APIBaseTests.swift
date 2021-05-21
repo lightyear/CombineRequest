@@ -62,6 +62,16 @@ class APIBaseTests: XCTestCase {
         expect(urlRequest?.url?.absoluteString) == "/?foo=bar%2Bbaz"
     }
 
+    func testBuildURLRequestBody() {
+        let request = TestRequest()
+        request.contentType = "text/plain"
+        request.body = Data("hello world".utf8)
+        let urlRequest = request.buildURLRequest()
+        expect(urlRequest?.value(forHTTPHeaderField: "Content-Type")) == "text/plain"
+        expect(urlRequest?.httpBody) == Data("hello world".utf8)
+        expect(urlRequest?.value(forHTTPHeaderField: "Content-Length")) == "11"
+    }
+
     func testStart() {
         let expectation = expectation(description: "GET /")
         stub(condition: isAbsoluteURLString("/")) { _ in

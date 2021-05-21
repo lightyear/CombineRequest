@@ -22,6 +22,8 @@ public protocol Request {
     var method: HTTPMethod { get }
     var path: String { get }
     var queryItems: [URLQueryItem] { get }
+    var contentType: String? { get }
+    var body: Data? { get }
     
     func start() -> AnyPublisher<ModelType, Failure>
 }
@@ -29,4 +31,6 @@ public protocol Request {
 extension Request {
     var method: HTTPMethod { .get }
     var queryItems: [URLQueryItem] { [] }
+    var contentType: String? { nil }
+    var body: Data? { nil }
 }

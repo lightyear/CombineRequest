@@ -23,6 +23,8 @@ open class APIBase {
     open var method = HTTPMethod.get
     open var path = ""
     open var queryItems = [URLQueryItem]()
+    open var contentType: String?
+    open var body: Data?
 
     public init() {
     }
@@ -31,6 +33,13 @@ open class APIBase {
         guard let url = buildURL() else { return nil }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method.rawValue
+
+        if let body = body {
+            urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
+            urlRequest.setValue("\(body.count)", forHTTPHeaderField: "Content-Length")
+            urlRequest.httpBody = body
+        }
+
         return urlRequest
     }
 
