@@ -25,7 +25,7 @@ public protocol Request {
     var contentType: String? { get }
     var body: Data? { get }
     var bodyStream: (stream: InputStream, count: Int)? { get }
-    
+
     func start() -> AnyPublisher<ModelType, Failure>
 }
 

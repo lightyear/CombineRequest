@@ -9,7 +9,7 @@ let package = Package(
     products: [
         .library(
             name: "CombineRequest",
-            targets: ["CombineRequest"]),
+            targets: ["CombineRequest"])
     ],
     dependencies: [
         .package(url: "https://github.com/Quick/Nimble", from: "9.0.0"),
@@ -25,6 +25,6 @@ let package = Package(
                 "CombineRequest",
                 "Nimble",
                 .product(name: "OHHTTPStubsSwift", package: "OHHTTPStubs")
-            ]),
+            ])
     ]
 )

@@ -19,7 +19,7 @@ open class APIBase {
     public typealias DataResponseTuple = (data: Data, response: HTTPURLResponse)
 
     public var session = URLSession(configuration: .ephemeral)
-    open var baseURL: URL? = nil
+    open var baseURL: URL?
     open var method = HTTPMethod.get
     open var path = ""
     open var queryItems = [URLQueryItem]()
