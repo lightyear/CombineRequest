@@ -16,6 +16,8 @@ public enum RequestError: Error {
 }
 
 open class APIBase {
+    public typealias DataResponseTuple = (data: Data, response: HTTPURLResponse)
+
     public var session = URLSession(configuration: .ephemeral)
     open var baseURL: URL? = nil
     open var method = HTTPMethod.get
@@ -31,7 +33,7 @@ open class APIBase {
         return urlRequest
     }
 
-    open func sendRequest() -> AnyPublisher<(data: Data, response: HTTPURLResponse), Error> {
+    open func sendRequest() -> AnyPublisher<DataResponseTuple, Error> {
         if let request = buildURLRequest() {
             return session.dataTaskPublisher(for: request)
                 .mapError { $0 }
@@ -45,7 +47,7 @@ open class APIBase {
 }
 
 extension Publisher {
-    public func isHTTPResponse() -> Publishers.TryMap<Self, (data: Data, response: HTTPURLResponse)> where Output == (data: Data, response: URLResponse) {
+    public func isHTTPResponse() -> Publishers.TryMap<Self, APIBase.DataResponseTuple> where Output == (data: Data, response: URLResponse) {
         self.tryMap {
             if let httpResponse = $0.response as? HTTPURLResponse {
                 return (data: $0.data, response: httpResponse)
@@ -54,7 +56,7 @@ extension Publisher {
         }
     }
 
-    public func validateStatusCode<Codes: Sequence>(in statusCodes: Codes) -> Publishers.TryScan<Self, Output> where Codes.Element == Int, Output == (data: Data, response: HTTPURLResponse) {
+    public func validateStatusCode<Codes: Sequence>(in statusCodes: Codes) -> Publishers.TryScan<Self, Output> where Codes.Element == Int, Output == APIBase.DataResponseTuple {
         self.tryScan((data: Data(), response: HTTPURLResponse())) { _, tuple in
             if !statusCodes.contains(tuple.response.statusCode) {
                 throw RequestError.httpFailure(tuple.response.statusCode)
@@ -63,7 +65,7 @@ extension Publisher {
         }
     }
 
-    public func hasContentType(_ expectedType: String) -> Publishers.TryScan<Self, Output> where Output == (data: Data, response: HTTPURLResponse) {
+    public func hasContentType(_ expectedType: String) -> Publishers.TryScan<Self, Output> where Output == APIBase.DataResponseTuple {
         self.tryScan((data: Data(), response: HTTPURLResponse())) { _, tuple in
             if let contentType = tuple.response.value(forHTTPHeaderField: "Content-Type") {
                 if contentType == expectedType || contentType.hasPrefix("\(expectedType); charset=") {
