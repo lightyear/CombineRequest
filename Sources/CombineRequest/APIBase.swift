@@ -114,20 +114,20 @@ extension Publisher {
         }
     }
 
-    public func validateStatusCode<Codes: Sequence>(in statusCodes: Codes) -> Publishers.TryScan<Self, Output> where Codes.Element == Int, Output == APIBase.DataResponseTuple {
-        self.tryScan((data: Data(), response: HTTPURLResponse())) { _, tuple in
-            if !statusCodes.contains(tuple.response.statusCode) {
-                throw RequestError.httpFailure(tuple.response.statusCode)
+    public func validateStatusCode<Codes: Sequence>(in statusCodes: Codes) -> Publishers.TryMap<Self, Output> where Codes.Element == Int, Output == APIBase.DataResponseTuple {
+        self.tryMap {
+            if !statusCodes.contains($0.response.statusCode) {
+                throw RequestError.httpFailure($0.response.statusCode)
             }
-            return tuple
+            return $0
         }
     }
 
-    public func hasContentType(_ expectedType: String) -> Publishers.TryScan<Self, Output> where Output == APIBase.DataResponseTuple {
-        self.tryScan((data: Data(), response: HTTPURLResponse())) { _, tuple in
-            if let contentType = tuple.response.value(forHTTPHeaderField: "Content-Type") {
+    public func hasContentType(_ expectedType: String) -> Publishers.TryMap<Self, Output> where Output == APIBase.DataResponseTuple {
+        self.tryMap {
+            if let contentType = $0.response.value(forHTTPHeaderField: "Content-Type") {
                 if contentType == expectedType || contentType.hasPrefix("\(expectedType); charset=") {
-                    return tuple
+                    return $0
                 }
             }
             throw RequestError.contentTypeMismatch
