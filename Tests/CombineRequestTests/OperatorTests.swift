@@ -97,7 +97,7 @@ class OperatorTests: XCTestCase {
     func testCorrectContentType() {
         let expectation = expectation(description: "GET / is text/plain")
         stub(condition: isAbsoluteURLString("/")) { _ in
-            HTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Content-Type": "text/plain"])
+            HTTPStubsResponse(data: Data("a".utf8), statusCode: 200, headers: ["Content-Type": "text/plain", "Content-Length": "1"])
         }
 
         let cancellable = TestContentTypeRequest()
@@ -117,7 +117,7 @@ class OperatorTests: XCTestCase {
     func testCorrectContentTypeWithCharset() {
         let expectation = expectation(description: "GET / is text/plain")
         stub(condition: isAbsoluteURLString("/")) { _ in
-            HTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Content-Type": "text/plain; charset=utf-8"])
+            HTTPStubsResponse(data: Data("a".utf8), statusCode: 200, headers: ["Content-Type": "text/plain; charset=utf-8", "Content-Length": "1"])
         }
 
         let cancellable = TestContentTypeRequest()
@@ -137,7 +137,7 @@ class OperatorTests: XCTestCase {
     func testWrongContentType() {
         let expectation = expectation(description: "GET / is text/plain")
         stub(condition: isAbsoluteURLString("/")) { _ in
-            HTTPStubsResponse(data: Data(), statusCode: 200, headers: ["Content-Type": "text/html"])
+            HTTPStubsResponse(data: Data("a".utf8), statusCode: 200, headers: ["Content-Type": "text/html", "Content-Length": "1"])
         }
 
         let cancellable = TestContentTypeRequest()
@@ -149,6 +149,26 @@ class OperatorTests: XCTestCase {
                     expectation.fulfill()
                 case .failure(let error):
                     fail("wrong error type: \(error)")
+                }
+            } receiveValue: {
+            }
+
+        expect(cancellable).toNot(beNil())
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testContentTypeWithEmptyResponseBody() {
+        let expectation = expectation(description: "GET / is empty")
+        stub(condition: isAbsoluteURLString("/")) { _ in
+            HTTPStubsResponse(data: Data(), statusCode: 204, headers: nil)
+        }
+
+        let cancellable = TestContentTypeRequest()
+            .start()
+            .sink {
+                switch $0 {
+                case .finished:           expectation.fulfill()
+                case .failure(let error): fail("should not fail: \(error)")
                 }
             } receiveValue: {
             }

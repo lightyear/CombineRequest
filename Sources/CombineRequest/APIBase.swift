@@ -125,6 +125,7 @@ extension Publisher {
 
     public func hasContentType(_ expectedType: String) -> Publishers.TryMap<Self, Output> where Output == APIBase.DataResponseTuple {
         self.tryMap {
+            guard !$0.data.isEmpty else { return $0 }
             if let contentType = $0.response.value(forHTTPHeaderField: "Content-Type") {
                 if contentType == expectedType || contentType.hasPrefix("\(expectedType); charset=") {
                     return $0
