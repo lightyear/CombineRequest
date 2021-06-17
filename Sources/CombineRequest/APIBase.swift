@@ -15,7 +15,7 @@ public enum RequestError: Error {
     case contentTypeMismatch
 }
 
-open class APIBase {
+open class APIBase: ObservableObject {
     public typealias DataResponseTuple = (data: Data, response: HTTPURLResponse)
 
     public var session = URLSession(configuration: .ephemeral)
@@ -85,12 +85,14 @@ open class APIBase {
                     task.publisher(for: \.countOfBytesSent),
                     task.publisher(for: \.countOfBytesExpectedToSend)
                 )
+                .receive(on: DispatchQueue.main)
                 .sink { self.uploadProgress = (sent: $0.0, expected: $0.1) }
                 .store(in: &self.subscriptions)
                 Publishers.CombineLatest(
                     task.publisher(for: \.countOfBytesReceived),
                     task.publisher(for: \.countOfBytesExpectedToReceive)
                 )
+                .receive(on: DispatchQueue.main)
                 .sink { self.downloadProgress = (received: $0.0, expected: $0.1) }
                 .store(in: &self.subscriptions)
 
