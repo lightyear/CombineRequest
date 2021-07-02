@@ -19,7 +19,6 @@ open class APIBase: ObservableObject {
     public typealias DataResponseTuple = (data: Data, response: HTTPURLResponse)
 
     public var session = URLSession(configuration: .ephemeral)
-    public lazy var request = buildURLRequest()
     open var baseURL: URL?
     open var method = HTTPMethod.get
     open var path = ""
@@ -35,12 +34,12 @@ open class APIBase: ObservableObject {
     public init() {
     }
 
-    open func buildURLRequest() -> URLRequest? {
-        guard let url = buildURL() else { return nil }
+    open func buildURLRequest() throws -> URLRequest {
+        guard let url = buildURL() else { throw RequestError.invalidURL }
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method.rawValue
 
-        if let body = body {
+        if let body = try encodeBody() {
             urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
             urlRequest.setValue("\(body.count)", forHTTPHeaderField: "Content-Length")
             urlRequest.httpBody = body
@@ -68,8 +67,13 @@ open class APIBase: ObservableObject {
         return components.url(relativeTo: baseURL)
     }
 
+    open func encodeBody() throws -> Data? {
+        body
+    }
+
     open func sendRequest() -> AnyPublisher<DataResponseTuple, Error> {
-        if let request = request {
+        do {
+            let request = try buildURLRequest()
             return Future { promise in
                 let task = self.session.dataTask(with: request) { data, urlResponse, error in
                     if let error = error {
@@ -99,8 +103,8 @@ open class APIBase: ObservableObject {
                 task.resume()
             }
             .eraseToAnyPublisher()
-        } else {
-            return Fail(error: RequestError.invalidURL)
+        } catch {
+            return Fail(error: error)
                 .eraseToAnyPublisher()
         }
     }

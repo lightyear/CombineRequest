@@ -53,55 +53,55 @@ class APIBaseTests: XCTestCase {
         super.tearDown()
     }
 
-    func testBuildURLRequestMethod() {
-        let urlRequest = TestRequest().buildURLRequest()
-        expect(urlRequest?.httpMethod) == "GET"
+    func testBuildURLRequestMethod() throws {
+        let urlRequest = try TestRequest().buildURLRequest()
+        expect(urlRequest.httpMethod) == "GET"
     }
 
-    func testBuildURLRequestURL() {
+    func testBuildURLRequestURL() throws {
         let request = TestRequest()
         request.baseURL = URL(string: "http://test")
-        let urlRequest = request.buildURLRequest()
-        expect(urlRequest?.url?.absoluteString) == "http://test/"
+        let urlRequest = try request.buildURLRequest()
+        expect(urlRequest.url?.absoluteString) == "http://test/"
     }
 
-    func testBuildURLRequestQueryString() {
+    func testBuildURLRequestQueryString() throws {
         let request = TestRequest()
         request.queryItems = [URLQueryItem(name: "foo", value: "bar")]
-        var urlRequest = request.buildURLRequest()
-        expect(urlRequest?.url?.absoluteString) == "/?foo=bar"
+        var urlRequest = try request.buildURLRequest()
+        expect(urlRequest.url?.absoluteString) == "/?foo=bar"
 
         request.queryItems = [URLQueryItem(name: "foo", value: "bar baz")]
-        urlRequest = request.buildURLRequest()
-        expect(urlRequest?.url?.absoluteString) == "/?foo=bar%20baz"
+        urlRequest = try request.buildURLRequest()
+        expect(urlRequest.url?.absoluteString) == "/?foo=bar%20baz"
 
         request.queryItems = [URLQueryItem(name: "foo", value: "bar+baz")]
-        urlRequest = request.buildURLRequest()
-        expect(urlRequest?.url?.absoluteString) == "/?foo=bar%2Bbaz"
+        urlRequest = try request.buildURLRequest()
+        expect(urlRequest.url?.absoluteString) == "/?foo=bar%2Bbaz"
     }
 
-    func testBuildURLRequestBody() {
+    func testBuildURLRequestBody() throws {
         let request = TestRequest()
         request.contentType = "text/plain"
         request.body = Data("hello world".utf8)
-        let urlRequest = request.buildURLRequest()
-        expect(urlRequest?.value(forHTTPHeaderField: "Content-Type")) == "text/plain"
-        expect(urlRequest?.httpBody) == Data("hello world".utf8)
-        expect(urlRequest?.value(forHTTPHeaderField: "Content-Length")) == "11"
+        let urlRequest = try request.buildURLRequest()
+        expect(urlRequest.value(forHTTPHeaderField: "Content-Type")) == "text/plain"
+        expect(urlRequest.httpBody) == Data("hello world".utf8)
+        expect(urlRequest.value(forHTTPHeaderField: "Content-Length")) == "11"
     }
 
-    func testBuildURLRequestBodyStream() {
+    func testBuildURLRequestBodyStream() throws {
         let request = TestRequest()
         request.contentType = "text/plain"
         request.bodyStream = (stream: InputStream(data: Data("hello world".utf8)), count: 11)
-        let urlRequest = request.buildURLRequest()
-        expect(urlRequest?.value(forHTTPHeaderField: "Content-Type")) == "text/plain"
-        expect(urlRequest?.value(forHTTPHeaderField: "Content-Length")) == "11"
+        let urlRequest = try request.buildURLRequest()
+        expect(urlRequest.value(forHTTPHeaderField: "Content-Type")) == "text/plain"
+        expect(urlRequest.value(forHTTPHeaderField: "Content-Length")) == "11"
 
         let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: 11)
         defer { buffer.deallocate() }
-        urlRequest?.httpBodyStream?.open()
-        let count = urlRequest?.httpBodyStream?.read(buffer, maxLength: 11)
+        urlRequest.httpBodyStream?.open()
+        let count = urlRequest.httpBodyStream?.read(buffer, maxLength: 11)
         let data = Data(bytes: buffer, count: count ?? 0)
         expect(data) == Data("hello world".utf8)
     }
