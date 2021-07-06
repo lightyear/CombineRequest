@@ -19,6 +19,7 @@ open class APIBase: ObservableObject {
     public typealias DataResponseTuple = (data: Data, response: HTTPURLResponse)
 
     public var session = URLSession(configuration: .ephemeral)
+    public var request: URLRequest?
     open var baseURL: URL?
     open var method = HTTPMethod.get
     open var path = ""
@@ -74,6 +75,7 @@ open class APIBase: ObservableObject {
     open func sendRequest() -> AnyPublisher<DataResponseTuple, Error> {
         do {
             let request = try buildURLRequest()
+            self.request = request
             return Future { promise in
                 let task = self.session.dataTask(with: request) { data, urlResponse, error in
                     if let error = error {
