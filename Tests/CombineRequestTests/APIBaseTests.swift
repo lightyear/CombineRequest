@@ -44,10 +44,6 @@ private class TestUploadRequest: APIBase, Request {
 }
 
 class APIBaseTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-    }
-
     override func tearDown() {
         HTTPStubs.removeAllStubs()
         super.tearDown()

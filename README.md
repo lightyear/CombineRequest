@@ -100,3 +100,24 @@ There are several useful operators available to validate that the response data 
 `validateStatusCode(in:)` generates an error, failing the pipeline, if the response status code isn't the provided sequence. You can pass any `Sequence` of `Int` (so, `Range<Int>`, `Set<Int>`, `Array<Int>` all work).
 
 `hasContentType(_:)` generates an error if the response content type doesn't match the passed type. This operator will match with or without a trailing charset. For example, `hasContentType("text/plain")` accepts a content type of either "text/plain" (exact match) or "text/plain; charset=utf-8".
+
+## Testing
+
+You can test your `Request` conformances using any library that hooks into Apple's URL loading system, such as [OHHTTPStubs](https://github.com/AliSoftware/OHHTTPStubs).
+
+Another option is to leverage Combine. `APIBase` exposes the `dataTaskPublisher` property, which is normally lazily created when your code calls `sendRequest()`. If you assign your own publisher to this property, you can short circuit the URL loading system and immediately generate a response or error. There are a few helper functions in `APIBase`:
+
+    stub(with: HTTPURLResponse, data: Data)
+
+Creates a publisher that produces a single `(data, response)` tuple and finishes. This stub gives you the most flexibility to build exactly the response that your code expects.
+
+    stubResponse(statusCode: Int, data: Data, headers: [String: String])
+    stubJSONResponse(statusCode: Int, data: Data, headers: [String: String])
+    
+Creates a publisher that produces a single `(data, response)` tuple and finishes. These two stubs take care of some boilerplate: putting the correct URL in the response, including a `Content-Length` and (for the JSON version) `Content-Type` header.
+    
+    stub(error: Error)
+
+Creates a publisher that immediately fails with the provided error. If you want to test network level failures (no Internet connection, DNS failures, etc.), this is the stub you want. If you want to test 4xx and 5xx HTTP failures, those are actually non-error cases from the network point of view, so you'll use one of the stubs above with an appropriate status code.
+
+You can see examples of both testing approaches in the test suite of this repository.

@@ -8,8 +8,6 @@
 import XCTest
 import Combine
 import Nimble
-import OHHTTPStubs
-import OHHTTPStubsSwift
 import CombineRequest
 
 private class TestStatusRequest: APIBase, Request {
@@ -41,22 +39,12 @@ private class TestContentTypeRequest: APIBase, Request {
 }
 
 class OperatorTests: XCTestCase {
-    override func setUp() {
-        super.setUp()
-    }
-
-    override func tearDown() {
-        HTTPStubs.removeAllStubs()
-        super.tearDown()
-    }
-
     func testValidateStatusCodeSuccess() {
         let expectation = expectation(description: "GET / -> 200")
-        stub(condition: isAbsoluteURLString("/")) { _ in
-            HTTPStubsResponse(data: Data(), statusCode: 200, headers: nil)
-        }
 
-        let cancellable = TestStatusRequest()
+        let request = TestStatusRequest()
+        request.dataTaskPublisher = request.stubResponse(statusCode: 200, data: Data())
+        let cancellable = request
             .start()
             .sink {
                 switch $0 {
@@ -72,11 +60,10 @@ class OperatorTests: XCTestCase {
 
     func testValidateStatusCodeFailure() {
         let expectation = expectation(description: "GET / -> 400")
-        stub(condition: isAbsoluteURLString("/")) { _ in
-            HTTPStubsResponse(data: Data(), statusCode: 400, headers: nil)
-        }
 
-        let cancellable = TestStatusRequest()
+        let request = TestStatusRequest()
+        request.dataTaskPublisher = request.stubResponse(statusCode: 400, data: Data())
+        let cancellable = request
             .start()
             .sink {
                 switch $0 {
@@ -96,11 +83,10 @@ class OperatorTests: XCTestCase {
 
     func testCorrectContentType() {
         let expectation = expectation(description: "GET / is text/plain")
-        stub(condition: isAbsoluteURLString("/")) { _ in
-            HTTPStubsResponse(data: Data("a".utf8), statusCode: 200, headers: ["Content-Type": "text/plain", "Content-Length": "1"])
-        }
 
-        let cancellable = TestContentTypeRequest()
+        let request = TestContentTypeRequest()
+        request.dataTaskPublisher = request.stubResponse(statusCode: 200, data: Data("a".utf8), headers: ["Content-Type": "text/plain"])
+        let cancellable = request
             .start()
             .sink {
                 switch $0 {
@@ -116,11 +102,10 @@ class OperatorTests: XCTestCase {
 
     func testCorrectContentTypeWithCharset() {
         let expectation = expectation(description: "GET / is text/plain")
-        stub(condition: isAbsoluteURLString("/")) { _ in
-            HTTPStubsResponse(data: Data("a".utf8), statusCode: 200, headers: ["Content-Type": "text/plain; charset=utf-8", "Content-Length": "1"])
-        }
 
-        let cancellable = TestContentTypeRequest()
+        let request = TestContentTypeRequest()
+        request.dataTaskPublisher = request.stubResponse(statusCode: 200, data: Data("a".utf8), headers: ["Content-Type": "text/plain; charset=utf-8"])
+        let cancellable = request
             .start()
             .sink {
                 switch $0 {
@@ -136,11 +121,10 @@ class OperatorTests: XCTestCase {
 
     func testWrongContentType() {
         let expectation = expectation(description: "GET / is text/plain")
-        stub(condition: isAbsoluteURLString("/")) { _ in
-            HTTPStubsResponse(data: Data("a".utf8), statusCode: 200, headers: ["Content-Type": "text/html", "Content-Length": "1"])
-        }
 
-        let cancellable = TestContentTypeRequest()
+        let request = TestContentTypeRequest()
+        request.dataTaskPublisher = request.stubResponse(statusCode: 200, data: Data("a".utf8), headers: ["Content-Type": "text/html"])
+        let cancellable = request
             .start()
             .sink {
                 switch $0 {
@@ -159,11 +143,10 @@ class OperatorTests: XCTestCase {
 
     func testContentTypeWithEmptyResponseBody() {
         let expectation = expectation(description: "GET / is empty")
-        stub(condition: isAbsoluteURLString("/")) { _ in
-            HTTPStubsResponse(data: Data(), statusCode: 204, headers: nil)
-        }
 
-        let cancellable = TestContentTypeRequest()
+        let request = TestContentTypeRequest()
+        request.dataTaskPublisher = request.stubResponse(statusCode: 204, data: Data())
+        let cancellable = request
             .start()
             .sink {
                 switch $0 {
