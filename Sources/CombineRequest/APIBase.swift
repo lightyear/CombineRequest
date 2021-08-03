@@ -81,33 +81,40 @@ open class APIBase: ObservableObject {
         do {
             let request = try buildURLRequest()
             self.request = request
-            return Future { promise in
-                let task = self.session.dataTask(with: request) { data, urlResponse, error in
-                    if let error = error {
-                        promise(.failure(error))
-                    } else if let data = data, let httpURLResponse = urlResponse as? HTTPURLResponse {
-                        promise(.success((data: data, response: httpURLResponse)))
-                    } else {
-                        promise(.failure(RequestError.nonHTTPResponse))
+            return Deferred { () -> AnyPublisher<DataResponseTuple, Error> in
+                var task: URLSessionTask?
+                return Future { promise in
+                    task = self.session.dataTask(with: request) { data, urlResponse, error in
+                        if let error = error {
+                            promise(.failure(error))
+                        } else if let data = data, let httpURLResponse = urlResponse as? HTTPURLResponse {
+                            promise(.success((data: data, response: httpURLResponse)))
+                        } else {
+                            promise(.failure(RequestError.nonHTTPResponse))
+                        }
                     }
+
+                    Publishers.CombineLatest(
+                        task!.publisher(for: \.countOfBytesSent),
+                        task!.publisher(for: \.countOfBytesExpectedToSend)
+                    )
+                    .receive(on: DispatchQueue.main)
+                    .sink { self.uploadProgress = (sent: $0.0, expected: $0.1) }
+                    .store(in: &self.subscriptions)
+                    Publishers.CombineLatest(
+                        task!.publisher(for: \.countOfBytesReceived),
+                        task!.publisher(for: \.countOfBytesExpectedToReceive)
+                    )
+                    .receive(on: DispatchQueue.main)
+                    .sink { self.downloadProgress = (received: $0.0, expected: $0.1) }
+                    .store(in: &self.subscriptions)
+
+                    task!.resume()
                 }
-
-                Publishers.CombineLatest(
-                    task.publisher(for: \.countOfBytesSent),
-                    task.publisher(for: \.countOfBytesExpectedToSend)
-                )
-                .receive(on: DispatchQueue.main)
-                .sink { self.uploadProgress = (sent: $0.0, expected: $0.1) }
-                .store(in: &self.subscriptions)
-                Publishers.CombineLatest(
-                    task.publisher(for: \.countOfBytesReceived),
-                    task.publisher(for: \.countOfBytesExpectedToReceive)
-                )
-                .receive(on: DispatchQueue.main)
-                .sink { self.downloadProgress = (received: $0.0, expected: $0.1) }
-                .store(in: &self.subscriptions)
-
-                task.resume()
+                .handleEvents(receiveCancel: {
+                    task?.cancel()
+                })
+                .eraseToAnyPublisher()
             }
             .eraseToAnyPublisher()
         } catch {
