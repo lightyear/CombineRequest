@@ -20,7 +20,7 @@ open class APIBase: ObservableObject {
 
     public var session = URLSession(configuration: .ephemeral)
     public var request: URLRequest?
-    public lazy var dataTaskPublisher: AnyPublisher<DataResponseTuple, Error> = buildPublisher()
+    public var dataTaskPublisher: AnyPublisher<DataResponseTuple, Error>?
     open var baseURL: URL?
     open var method = HTTPMethod.get
     open var path = ""
@@ -74,7 +74,7 @@ open class APIBase: ObservableObject {
     }
 
     open func sendRequest() -> AnyPublisher<DataResponseTuple, Error> {
-        dataTaskPublisher
+        dataTaskPublisher ?? buildPublisher()
     }
 
     func buildPublisher() -> AnyPublisher<DataResponseTuple, Error> {
