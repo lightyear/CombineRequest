@@ -4,9 +4,12 @@ CombineRequest is a flexible framework for building a suite of requests to commu
 
 ## Install
 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Flightyear%2FCombineRequest%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/lightyear/CombineRequest)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Flightyear%2FCombineRequest%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/lightyear/CombineRequest)
+
 Installation is done through Swift Package Manager. Paste the URL of this repo into Xcode or add this line to your `Package.swift`:
 
-    .package(url: "https://github.com/lightyear/CombineRequest", from: "0.1.0")
+    .package(url: "https://github.com/lightyear/CombineRequest", from: "1.0.0")
 
 ## Usage
 
